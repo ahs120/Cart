@@ -1,92 +1,117 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const icon = document.querySelector("i.icon");
-  const cartEl = document.querySelector(".cart");
-  const closeBtn = document.querySelector(".btn.close");
+  const cart = document.querySelector(".cart");
+  const icon = document.querySelector(".icon");
+  const closeBtn = document.querySelector(".close");
   const shop = document.querySelector(".shop");
-  let products = [];
-  let cartItems = [];
+  const cartList = document.querySelector(".items-lis");
+  const iconText = document.querySelector(".count");
+  let listItems = [];
+  let product = [];
 
-  // Toggle the cart display
-  const toggleCart = () => {
-    cartEl.classList.toggle("active");
+  const cartToggle = () => {
+    cart.classList.toggle("active");
   };
 
-  icon.addEventListener("click", toggleCart);
-  closeBtn.addEventListener("click", toggleCart);
+  icon.addEventListener("click", cartToggle);
+  closeBtn.addEventListener("click", cartToggle);
 
-  // Render the list of products to the shop
-  const renderProducts = (products) => {
-    shop.innerHTML = "";
-    products.forEach((product) => {
-      const itemEl = document.createElement("div");
-      itemEl.dataset.id = product.id;
-      itemEl.classList.add("item");
-      itemEl.innerHTML = `
-        <img src="${product.image}" alt="${product.name}" />
-        <div class="name">${product.name}</div>
-        <div class="price">${product.prices}</div>
-        <button class="add-to-cart">Add to Cart</button>
-      `;
-      shop.appendChild(itemEl);
-    });
-  };
-
-  // Add product to cart logic
-  const addToCart = (productId) => {
-    const index = cartItems.findIndex((item) => item.product_id === productId);
-    if (index === -1) {
-      cartItems.push({ product_id: productId, quantity: 1 });
-    } else {
-      cartItems[index].quantity += 1;
-    }
-    updateCartUI();
-    saveCart();
-  };
-
-  // Update the UI to reflect the current cartItems
-  const updateCartUI = () => {
-    // Implement your cart UI update logic here
-    console.log("Cart Items:", cartItems);
-  };
-
-  // Save the current cart to localStorage
-  const saveCart = () => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  };
-
-  // Load the cart from localStorage on initialization
-  const loadCart = () => {
-    const storedCart = localStorage.getItem("cart");
-    if (storedCart) {
-      cartItems = JSON.parse(storedCart);
-      updateCartUI();
-    }
-  };
-
-  // Event delegation for adding items to the cart
   shop.addEventListener("click", (event) => {
-    const addBtn = event.target.closest(".add-to-cart");
-    if (addBtn) {
-      const productEl = addBtn.closest(".item");
-      const productId = productEl.dataset.id;
-      addToCart(productId);
+    const itemPosition = event.target;
+    if (itemPosition.classList.contains("add-to-cart")) {
+      const item_id = itemPosition.parentElement.dataset.id;
+      addToCart(item_id);
     }
   });
 
-  // Initialize the app: fetch products and load cart data
-  const initApp = async () => {
-    try {
-      const response = await fetch("../../products.json");
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
-      products = await response.json();
-      renderProducts(products);
-      loadCart();
-    } catch (error) {
-      console.error("Error initializing app:", error);
+  const addToCart = (item_id) => {
+    const posItemInCart = listItems.findIndex((e) => e.id === item_id);
+
+    if (posItemInCart === -1) {
+      listItems.push({ id: item_id, count: 1 });
+    } else {
+      listItems[posItemInCart].count += 1;
     }
+    addHTMLToCart();
   };
 
-  initApp();
+  const addHTMLToCart = () => {
+    cartList.innerHTML = "";
+    let totalCount = 0;
+    if (listItems.length > 0) {
+      listItems.forEach((item) => {
+        totalCount += item.count;
+        let newItem = document.createElement("div");
+        newItem.classList.add("item");
+        newItem.dataset.id = item.id;
+        let positionItem = product.findIndex((value) => value.id == item.id);
+        let info = product[positionItem];
+        newItem.innerHTML = `
+          <img src="${info.image}" alt="item" />
+          <p class="name">${info.name}</p>
+          <div class="control">
+            <span class="sup col" onclick="updateQuantity('${
+              item.id
+            }', -1)">-</span>
+            <div class="quint col">${item.count}</div>
+            <span class="plus col" onclick="updateQuantity('${
+              item.id
+            }', 1)">+</span>
+          </div>
+          <div class="price">${info.price * item.count}</div>
+        `;
+        cartList.appendChild(newItem);
+        addMemory();
+      });
+    }
+    iconText.textContent = totalCount;
+  };
+  window.updateQuantity = (item_id, change) => {
+    const posItemInCart = listItems.findIndex((e) => e.id === item_id);
+    if (posItemInCart !== -1) {
+      listItems[posItemInCart].count += change;
+      if (listItems[posItemInCart].count <= 0) {
+        listItems.splice(posItemInCart, 1);
+      }
+      addHTMLToCart();
+      addMemory();
+    }
+  };
+  const addToHTML = (data) => {
+    shop.innerHTML = "";
+    data.forEach((item) => {
+      let div = document.createElement("div");
+      div.classList.add("item");
+      div.dataset.id = item.id;
+      div.innerHTML = `
+        <img src="${item.image}" alt="image" />
+        <div class="name">${item.name}</div>
+        <div class="price">${item.price}</div>
+        <div class="add-to-cart">Add to Cart</div>
+      `;
+      shop.append(div);
+    });
+  };
+
+  const addMemory = () => {
+    localStorage.setItem("Cart", JSON.stringify(listItems));
+  };
+  const getData = () => {
+    fetch("../../products.json")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok " + response.statusText);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        product = data;
+        addToHTML(data);
+        if (localStorage.getItem("Cart")) {
+          listItems = JSON.parse(localStorage.getItem("Cart"));
+          addHTMLToCart();
+        }
+      });
+  };
+
+  getData();
 });

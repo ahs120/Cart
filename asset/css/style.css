@@ -5,7 +5,6 @@
 }
 .container {
   width: 1200px;
-  min-height: 100vh;
   margin: 0 auto;
   padding-bottom: 30px;
 }
@@ -49,14 +48,15 @@ header > .icon span {
 .cart {
   display: grid;
   grid-template-rows: 72px 1fr 72px;
-  position: absolute;
+  position: fixed;
   background-color: #333;
   color: #fff;
   width: 400px;
-  height: 100vh;
+  height: 100%;
   top: 0;
   right: -400px;
   transition: 0.3s;
+  z-index: 1220;
 }
 
 .cart.active {
